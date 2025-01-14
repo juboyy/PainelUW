@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import logouw from './logos/logouw.png';
 import './logoUW.css';
 import './statusColors.css';
 
@@ -9,18 +9,28 @@ const FlightListPage = ({ flights, getStatusColor, onAddClick, onEditFlight, onD
     const [currentTime, setCurrentTime] = useState(new Date());
     const [hoveredRow, setHoveredRow] = useState(null);
 
+    const getPanamaTime = () => {
+        const options = {
+            timeZone: 'America/Panama',
+            hour12: false
+        };
+        return new Date().toLocaleString('en-US', options);
+    };
+
     useEffect(() => {
         const timer = setInterval(() => {
-            setCurrentTime(new Date());
+            setCurrentTime(new Date(getPanamaTime()));
         }, 1000);
 
         return () => clearInterval(timer);
     }, []);
 
-    const formattedTime = currentTime.toLocaleTimeString([], {
+    const formattedTime = currentTime.toLocaleTimeString('en-US', {
         hour: '2-digit',
         minute: '2-digit',
         second: '2-digit',
+        hour12: false,
+        timeZone: 'America/Panama'
     });
 
     const handleEdit = (flight) => {
@@ -48,7 +58,7 @@ const FlightListPage = ({ flights, getStatusColor, onAddClick, onEditFlight, onD
                         <table className="table table-striped table-dark">
                             <thead>
                                 <tr>
-                                    <th>Airline</th>
+                                    <th style={{ width: '80px' }}>Airline</th>
                                     <th>Flight</th>
                                     <th>Origin</th>
                                     <th>Destination</th>
@@ -67,7 +77,19 @@ const FlightListPage = ({ flights, getStatusColor, onAddClick, onEditFlight, onD
                                         onMouseLeave={() => setHoveredRow(null)}
                                         className="position-relative"
                                     >
-                                        <td>{flight.airline}</td>
+                                        <td>
+                                            <img
+                                                src={logouw}
+                                                alt="Universal Weather"
+                                                className="cia-logo"
+                                                style={{
+                                                    maxWidth: '50px',
+                                                    height: 'auto',
+                                                    display: 'block',
+                                                    margin: '0 auto'
+                                                }}
+                                            />
+                                        </td>
                                         <td>{flight.flight}</td>
                                         <td>{flight.origin}</td>
                                         <td>{flight.destination}</td>
@@ -103,21 +125,9 @@ const FlightListPage = ({ flights, getStatusColor, onAddClick, onEditFlight, onD
                                 ))}
                             </tbody>
                         </table>
-                        <small className="text-muted mt-2">
-                            Times shown in local time (24-hour format)
+                        <small className="text-white mt-2 d-block">
+                            Times shown in Panama time (UTC-5, 24-hour format)
                         </small>
-                    </div>
-
-                    <div className='mt-3'>
-                        <div className="d-flex align-items-center">
-                            <Button
-                                variant="primary"
-                                onClick={onAddClick}
-                                className="me-3"
-                            >
-                                New Flight
-                            </Button>
-                        </div>
                     </div>
                 </div> 
             </div> 

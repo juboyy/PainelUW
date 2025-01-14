@@ -27,13 +27,46 @@ export class FlightService {
     }
   });
 
-  private formatFlightTime(date: Date): string {
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
+  private readonly PANAMA_TIMEZONE = 'America/Panama';
+
+  private convertUTCToPanama(utcDate: string): Date {
+    // Criar data a partir da string UTC
+    const date = new Date(utcDate);
     
-    return `${hours}:${minutes} ${month}/${day}`;
+    // Converter para horário do Panamá usando o próprio timezone do sistema
+    return new Date(date.toLocaleString('en-US', {
+      timeZone: this.PANAMA_TIMEZONE
+    }));
+  }
+
+  private formatFlightTime(utcDate: string): string {
+    // Converter diretamente para horário do Panamá usando o timezone correto
+    const options: Intl.DateTimeFormatOptions = {
+      timeZone: this.PANAMA_TIMEZONE,
+      hour: '2-digit',
+      minute: '2-digit',
+      month: '2-digit',
+      day: '2-digit',
+      hour12: false
+    };
+
+    return new Date(utcDate).toLocaleString('en-US', options);
+  }
+
+  private getCurrentPanamaTime(): Date {
+    // Obter horário atual do Panamá
+    const now = new Date();
+    return new Date(now.toLocaleString('en-US', {
+      timeZone: this.PANAMA_TIMEZONE
+    }));
+  }
+
+  private isSameDay(date1: Date, date2: Date): boolean {
+    return (
+      date1.getDate() === date2.getDate() &&
+      date1.getMonth() === date2.getMonth() &&
+      date1.getFullYear() === date2.getFullYear()
+    );
   }
 
   async getAllFlights(): Promise<Flight[]> {
@@ -44,13 +77,12 @@ export class FlightService {
         return this.getMockFlights();
       }
 
-      const now = new Date().getTime();
+      const nowInPanama = this.getCurrentPanamaTime();
 
       return response.data.flights
         .map((flight, index) => {
-          const departureDate = new Date(flight.departureTime);
-          const arrivalDate = new Date(flight.arrivalTime);
-          const timeDifference = departureDate.getTime() - now;
+          const departurePanama = this.convertUTCToPanama(flight.departureTime);
+          const timeDifference = departurePanama.getTime() - nowInPanama.getTime();
           
           return {
             id: index + 1,
@@ -59,24 +91,30 @@ export class FlightService {
             origin: flight.departure || '',
             destination: flight.destination || '',
             aircraft: flight.aircraftRegistration || '',
-            status: this.getFlightStatus(flight.filingStatus, new Date(flight.departureTime), new Date()),
-            time1: this.formatFlightTime(departureDate),
-            time2: this.formatFlightTime(arrivalDate),
-            departureTime: departureDate.getTime(),
+            status: this.getFlightStatus(flight.filingStatus, departurePanama, nowInPanama),
+            time1: this.formatFlightTime(flight.departureTime),
+            time2: this.formatFlightTime(flight.arrivalTime),
+            departureTime: departurePanama.getTime(),
+            departureDate: departurePanama,
             timeDifference
           };
         })
         .sort((a, b) => {
-          // Future flights first, sorted by closest to now
-          if (a.timeDifference >= 0 && b.timeDifference >= 0) {
-            return a.timeDifference - b.timeDifference;
+          // Verificar se os voos são do mesmo dia que hoje
+          const isAToday = this.isSameDay(new Date(a.departureDate), nowInPanama);
+          const isBToday = this.isSameDay(new Date(b.departureDate), nowInPanama);
+
+          // Voos de hoje primeiro
+          if (isAToday && !isBToday) return -1;
+          if (!isAToday && isBToday) return 1;
+
+          // Para voos do mesmo dia, ordenar por horário mais recente primeiro
+          if (isAToday && isBToday) {
+            return b.departureTime - a.departureTime;
           }
-          // Past flights last, sorted by most recent
-          if (a.timeDifference < 0 && b.timeDifference < 0) {
-            return b.timeDifference - a.timeDifference;
-          }
-          // Future flights before past flights
-          return a.timeDifference < 0 ? 1 : -1;
+
+          // Para voos de outros dias, manter ordem cronológica reversa
+          return b.departureTime - a.departureTime;
         });
     } catch (error: any) {
       console.error('Detailed API Error:', error);
