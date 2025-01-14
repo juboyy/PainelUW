@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import logouw from './logos/logouw.png';
 import './logoUW.css';
 import './statusColors.css';
 
@@ -49,33 +48,27 @@ const FlightListPage = ({ flights, getStatusColor, onAddClick, onEditFlight, onD
                         <table className="table table-striped table-dark">
                             <thead>
                                 <tr>
-                                    <th>Ariline</th>
+                                    <th>Airline</th>
                                     <th>Flight</th>
                                     <th>Origin</th>
                                     <th>Destination</th>
                                     <th>Aircraft</th>
                                     <th>Status</th>
-                                    <th>Time</th>
+                                    <th>DEP (HH:MM MM/DD)</th>
+                                    <th>ARR (HH:MM MM/DD)</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {flights.slice().reverse().map((flight) => (
+                                {flights.map((flight) => (
                                     <tr
                                         key={flight.id}
                                         onMouseEnter={() => setHoveredRow(flight.id)}
                                         onMouseLeave={() => setHoveredRow(null)}
                                         className="position-relative"
                                     >
-                                        <td>
-                                            <img
-                                                src={logouw}
-                                                alt="Logouw"
-                                                className="cia-logo img-fluid"
-                                                style={{ maxWidth: '50px' }}
-                                            />
-                                        </td>
-                                        <td>{flight.flightNumber}</td>
+                                        <td>{flight.airline}</td>
+                                        <td>{flight.flight}</td>
                                         <td>{flight.origin}</td>
                                         <td>{flight.destination}</td>
                                         <td>{flight.aircraft}</td>
@@ -84,7 +77,8 @@ const FlightListPage = ({ flights, getStatusColor, onAddClick, onEditFlight, onD
                                                 {flight.status}
                                             </span>
                                         </td>
-                                        <td>{flight.time}</td>
+                                        <td>{flight.time1}</td>
+                                        <td>{flight.time2}</td>
                                         <td>
                                             {hoveredRow === flight.id && (
                                                 <div className="d-flex gap-2">
@@ -109,6 +103,9 @@ const FlightListPage = ({ flights, getStatusColor, onAddClick, onEditFlight, onD
                                 ))}
                             </tbody>
                         </table>
+                        <small className="text-muted mt-2">
+                            Times shown in local time (24-hour format)
+                        </small>
                     </div>
 
                     <div className='mt-3'>
